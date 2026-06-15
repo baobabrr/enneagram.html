@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Baobab Human Lab</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0f; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useRef } = React;
+
+    const TYPES = {
+      1: {
+        name: "完全主義者",
+        fear: "不完全であること",
+        obsession: "イライラ",
+        integration: { type: 7, label: "自発的に楽しめる" },
+        disintegration: { type: 4, label: "傷つきやすく落ち込む" },
+        drive: "私は、理想を追い求めたいだけ。",
+        desc: "怒りは、世界をより良くできると知っている証拠だ。あなたを動かしているのは欠点探しではない。理想を貫く力だ。",
+      },
+      2: {
+        name: "献身家",
+        fear: "愛されないこと",
+        obsession: "プライド",
+        integration: { type: 4, label: "自分の感情と向き合える" },
+        disintegration: { type: 8, label: "支配的・攻撃的になる" },
+        drive: "私は、私のためにありたいだけ。",
+        desc: "愛されることに執着するのは、それが自分らしくいていい理由になるからだ。あなたが求めているのは、他者からの愛ではない。自分らしく在ることだ。",
+      },
+      3: {
+        name: "達成者",
+        fear: "価値のない存在であること",
+        obsession: "見栄",
+        integration: { type: 6, label: "誠実に他者と協力できる" },
+        disintegration: { type: 9, label: "無気力・解離する" },
+        drive: "私は、何もできなくてもここにいたいだけ。",
+        desc: "成果を求め続けるのは、存在価値を証明したいからだ。だが価値は結果で生まれない。あなたの存在は最初から許されている。",
+      },
+      4: {
+        name: "個人主義者",
+        fear: "アイデンティティを持てないこと",
+        obsession: "嫉妬",
+        integration: { type: 1, label: "客観的に行動できる" },
+        disintegration: { type: 2, label: "依存・執着する" },
+        drive: "私は、ありのままを理解されたいだけ。",
+        desc: "自分の感覚にこだわるのは、それが確かに自分の中にある真実だからだ。あなたが求めているのは特別さではない。この感覚もまた正しいと信じることだ。",
+      },
+      5: {
+        name: "観察者",
+        fear: "無力で無能であること",
+        obsession: "貯め込み",
+        integration: { type: 8, label: "力強く行動に出る" },
+        disintegration: { type: 7, label: "散漫・衝動的になる" },
+        drive: "私は、世界を恐れたくないだけ。",
+        desc: "知識を集めるのは、無防備でいたくないからだ。あなたが積み重ねてきた理解は、すでにあなた自身を支える力になっている。",
+      },
+      6: {
+        name: "忠実者",
+        fear: "支えも指針もないこと",
+        obsession: "怯え",
+        integration: { type: 9, label: "穏やかに自分を信じられる" },
+        disintegration: { type: 3, label: "イメージに執着する" },
+        drive: "私は、自分の力を信じたいだけ。",
+        desc: "疑い続けるのは、生き延びる大切さを知っているからだ。あなたが探している安全は、外側ではなく自分の中にある。",
+      },
+      7: {
+        name: "熱中者",
+        fear: "痛みの中に閉じ込められること",
+        obsession: "欲張り",
+        integration: { type: 5, label: "深く集中・統合できる" },
+        disintegration: { type: 1, label: "批判的・完璧主義になる" },
+        drive: "私は、自分の選択を信じたいだけ。",
+        desc: "楽しいことで頭を満たすのは、生きることそのものを肯定しているからだ。あなたは逃げているんじゃない。自由を守ろうとしている。",
+      },
+      8: {
+        name: "挑戦者",
+        fear: "傷つけられ、支配されること",
+        obsession: "意地",
+        integration: { type: 2, label: "心を開いて与えられる" },
+        disintegration: { type: 5, label: "引きこもり・切断する" },
+        drive: "私は、弱さを許されたいだけ。",
+        desc: "強くあろうとするのは、弱さが許されない世界を知っているからだ。あなたが求めているのは勝利ではない。安心して無防備でいられることだ。",
+      },
+      9: {
+        name: "平和主義者",
+        fear: "失ったり、分離されること",
+        obsession: "場に任せる",
+        integration: { type: 3, label: "自分の目標に向かえる" },
+        disintegration: { type: 6, label: "不安・疑念が高まる" },
+        drive: "私は、この世界と共にありたいだけ。",
+        desc: "自分を前に出さないのは、世界を壊したくないからだ。あなたは無力なのではない。自分の力を知っている。",
+      },
+    };
+
+    function App() {
+      const [screen, setScreen] = useState("select");
+      const [selected, setSelected] = useState(null);
+      const [split, setSplit] = useState(false);
+      const [flash, setFlash] = useState(false);
+      const [step, setStep] = useState(0);
+
+      const timers = useRef([]);
+      const d = (fn, ms) => { const t = setTimeout(fn, ms); timers.current.push(t); };
+      const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+
+      const start = (n) => {
+        clear();
+        setSelected(n);
+        setStep(0);
+        setFlash(false);
+        setSplit(true);
+
+        d(() => setScreen("reveal"), 950);
+        d(() => setSplit(false), 1000);
+
+        d(() => setStep(1),  2500);
+        d(() => setStep(2),  4500);
+        d(() => setStep(3),  6500);
+        d(() => setStep(4),  8500);
+        d(() => setStep(5),  10500);
+        d(() => setStep(6),  12500);
+        d(() => setStep(7),  14500);
+        d(() => setStep(8),  16500);
+        d(() => setStep(9),  18500);
+        d(() => setStep(10), 21000);
+        d(() => setStep(11), 22000);
+        d(() => setStep(12), 24000);
+
+        d(() => {
+          setFlash(true);
+          d(() => { setFlash(false); setSplit(true); }, 200);
+          d(() => {
+            setScreen("drive");
+            d(() => setSplit(false), 100);
+          }, 1100);
+        }, 24100);
+      };
+
+      const restart = () => {
+        clear();
+        setSplit(true);
+        d(() => {
+          setStep(0);
+          setFlash(false);
+          setScreen("select");
+          d(() => setSplit(false), 100);
+        }, 950);
+      };
+
+      const t = selected ? TYPES[selected] : null;
+      const wallLeft  = split ? "translateX(0)" : "translateX(-100%)";
+      const wallRight = split ? "translateX(0)" : "translateX(100%)";
+      const dissolve  = step >= 12;
+      const fa = dissolve ? "dissolveOut 2s forwards" : "fadeIn 1.2s forwards";
+
+      return (
+        <div style={{ fontFamily: "sans-serif", background: "#0a0a0f", minHeight: "100vh", color: "#e8e0d0", position: "relative", overflow: "hidden" }}>
+          <style>{`
+            @keyframes fadeIn      { from { opacity: 0 } to { opacity: 1 } }
+            @keyframes dissolveOut { from { opacity: 1 } to { opacity: 0 } }
+            @keyframes glow {
+              0%   { filter: drop-shadow(0 0 0px #c9a84c) }
+              50%  { filter: drop-shadow(0 0 36px #c9a84c) drop-shadow(0 0 14px #e8c97a) }
+              100% { filter: drop-shadow(0 0 12px #c9a84c) }
+            }
+            @keyframes descend {
+              from { opacity: 0; transform: translateX(-50%) translateY(-28px) }
+              to   { opacity: 1; transform: translateX(-50%) translateY(0) }
+            }
+            @keyframes flashA {
+              0%   { opacity: 0 }
+              50%  { opacity: 1 }
+              100% { opacity: 0 }
+            }
+            @keyframes driveIn {
+              from { opacity: 0; transform: translateY(24px) scale(0.97) }
+              to   { opacity: 1; transform: translateY(0) scale(1) }
+            }
+            .tb:hover { border-color: #7a6030 !important; background: #1a1828 !important; transform: translateY(-2px) }
+            .rb:hover { border-color: #c9a84c !important; color: #e8e0d0 !important }
+          `}</style>
+
+          {flash && (
+            <div style={{ position: "fixed", inset: 0, zIndex: 49, pointerEvents: "none", animation: "flashA 0.15s forwards", background: "rgba(240,216,154,0.09)" }} />
+          )}
+          <div style={{ position: "fixed", top: 0, bottom: 0, left: 0, width: "50%", background: "#0a0a0f", zIndex: 50, transform: wallLeft, transition: "transform 0.9s cubic-bezier(0.76,0,0.24,1)" }} />
+          <div style={{ position: "fixed", top: 0, bottom: 0, right: 0, width: "50%", background: "#0a0a0f", zIndex: 50, transform: wallRight, transition: "transform 0.9s cubic-bezier(0.76,0,0.24,1)" }} />
+
+          {screen === "select" && (
+            <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", background: "radial-gradient(ellipse at 50% 0%, #1a1228 0%, #0a0a0f 70%)" }}>
+              <p style={{ fontSize: 12, letterSpacing: "0.4em", color: "#7a6030", marginBottom: 40, textAlign: "center" }}>Baobab Human Lab</p>
+              <h1 style={{ fontSize: "clamp(19px,5vw,29px)", fontWeight: 900, textAlign: "center", lineHeight: 1.6, marginBottom: 8 }}>あなたのタイプは<br />どれに近いですか？</h1>
+              <p style={{ fontSize: 14, color: "#7a7268", textAlign: "center", marginBottom: 40, lineHeight: 1.8 }}>自認でかまいません。<br />一番しっくりくる数字を選んでください。</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, maxWidth: 320, width: "100%" }}>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                  <button key={n} className="tb" onClick={() => start(n)}
+                    style={{ background: "#111118", border: "1px solid #2a2830", borderRadius: 12, padding: "14px 8px", cursor: "pointer", textAlign: "center", color: "#e8e0d0", transition: "all 0.2s" }}>
+                    <span style={{ fontSize: 27, fontWeight: 900, color: "#c9a84c", display: "block", lineHeight: 1, marginBottom: 5 }}>{n}</span>
+                    <span style={{ fontSize: 11, color: "#7a7268" }}>{TYPES[n].name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {screen === "reveal" && t && (
+            <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 24px", background: "#0a0a0f" }}>
+              <div style={{ position: "relative", width: 280, height: 340 }}>
+
+                <svg width="280" height="280" viewBox="0 0 280 280" style={{
+                  position: "absolute", top: 0, left: 0,
+                  animation: step >= 9 ? "glow 3s ease-in-out forwards" : "none",
+                }}>
+                  <polygon points="140,24 258,248 22,248" fill="none"
+                    stroke={step >= 1 ? "#4a4060" : "#1e1e28"} strokeWidth="1.5"
+                    style={{ transition: "stroke 1.5s" }} />
+                  <circle cx="140" cy="24"  r="4.5" fill={step >= 1 ? "#4a4060" : "#1e1e28"} style={{ transition: "fill 1.5s" }} />
+                  <circle cx="22"  cy="248" r="4.5" fill={step >= 3 ? "#4a7a4a" : "#1e1e28"} style={{ transition: "fill 1.5s" }} />
+                  <circle cx="258" cy="248" r="4.5" fill={step >= 5 ? "#7a3a3a" : "#1e1e28"} style={{ transition: "fill 1.5s" }} />
+                </svg>
+
+                {step >= 1 && (
+                  <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", animation: fa }}>
+                    <span style={{ fontSize: 11, letterSpacing: "0.3em", color: "#7a6030" }}>あなたの恐れ</span>
+                  </div>
+                )}
+                {step >= 2 && (
+                  <div style={{ position: "absolute", top: 18, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", animation: fa }}>
+                    <span style={{ fontSize: 16, color: "#e8c97a", fontWeight: 700, letterSpacing: "0.05em" }}>{t.fear}</span>
+                  </div>
+                )}
+                {step >= 3 && (
+                  <div style={{ position: "absolute", top: 258, left: 0, textAlign: "left", whiteSpace: "nowrap", pointerEvents: "none", animation: fa }}>
+                    <span style={{ fontSize: 10, letterSpacing: "0.2em", color: "#4a7a4a" }}>元気な時 → {t.integration.type}</span>
+                  </div>
+                )}
+                {step >= 4 && (
+                  <div style={{ position: "absolute", top: 276, left: 0, textAlign: "left", pointerEvents: "none", animation: fa }}>
+                    <span style={{ fontSize: 13, color: "#7abf7a", fontWeight: 600, maxWidth: 110, display: "block", lineHeight: 1.5 }}>{t.integration.label}</span>
+                  </div>
+                )}
+                {step >= 5 && (
+                  <div style={{ position: "absolute", top: 258, right: 0, textAlign: "right", whiteSpace: "nowrap", pointerEvents: "none", animation: fa }}>
+                    <span style={{ fontSize: 10, letterSpacing: "0.2em", color: "#7a3a3a" }}>疲れている時 → {t.disintegration.type}</span>
+                  </div>
+                )}
+                {step >= 6 && (
+                  <div style={{ position: "absolute", top: 276, right: 0, textAlign: "right", pointerEvents: "none", animation: fa }}>
+                    <span style={{ fontSize: 13, color: "#bf7a7a", fontWeight: 600, maxWidth: 110, display: "block", lineHeight: 1.5 }}>{t.disintegration.label}</span>
+                  </div>
+                )}
+                {step >= 7 && (
+                  <div style={{ position: "absolute", top: 148, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", animation: fa }}>
+                    <span style={{ fontSize: 11, letterSpacing: "0.3em", color: "#7a7268" }}>あなたの囚われ</span>
+                  </div>
+                )}
+                {step >= 8 && (
+                  <div style={{ position: "absolute", top: 168, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", animation: fa }}>
+                    <span style={{ fontSize: 23, fontWeight: 900, color: "#e8e0d0", letterSpacing: "0.05em" }}>{t.obsession}</span>
+                  </div>
+                )}
+                {step >= 10 && (
+                  <div style={{ position: "absolute", top: 100, left: "50%", whiteSpace: "nowrap", textAlign: "center", pointerEvents: "none", animation: "descend 1.8s cubic-bezier(0.22,1,0.36,1) forwards", opacity: 0 }}>
+                    <span style={{ fontSize: "clamp(17px,4vw,22px)", fontStyle: "italic", color: "#1a1428", fontWeight: 800, letterSpacing: "0.12em", padding: "4px 16px", background: "rgba(232,201,122,0.92)", borderRadius: 4, boxShadow: "0 0 24px rgba(201,168,76,0.9), 0 0 48px rgba(201,168,76,0.6), 0 0 80px rgba(201,168,76,0.3)", display: "inline-block" }}>それって、</span>
+                  </div>
+                )}
+                {step >= 11 && (
+                  <div style={{ position: "absolute", top: 148, left: "50%", whiteSpace: "nowrap", textAlign: "center", pointerEvents: "none", animation: "descend 2s cubic-bezier(0.22,1,0.36,1) forwards", opacity: 0 }}>
+                    <span style={{ fontSize: "clamp(19px,4.5vw,27px)", fontStyle: "italic", color: "#1a1428", fontWeight: 900, letterSpacing: "0.12em", padding: "4px 20px", background: "rgba(232,201,122,0.95)", borderRadius: 4, boxShadow: "0 0 32px rgba(201,168,76,1), 0 0 64px rgba(201,168,76,0.7), 0 0 100px rgba(201,168,76,0.4)", display: "inline-block" }}>なんのため？</span>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          )}
+
+          {screen === "drive" && t && (
+            <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 24px", textAlign: "center", background: "radial-gradient(ellipse at 50% 30%, #1a1230 0%, #0a0a0f 65%)" }}>
+              <p style={{ fontSize: 11, letterSpacing: "0.5em", color: "#7a6030", marginBottom: 20, animation: "fadeIn 0.8s 0.3s both" }}>
+                CORE DRIVE — 原動力
+              </p>
+              <p style={{ fontSize: "clamp(20px,5vw,31px)", fontWeight: 900, lineHeight: 1.7, color: "#e8c97a", marginBottom: 40, animation: "driveIn 1.2s 0.8s both" }}>
+                {t.drive}
+              </p>
+              <div style={{ width: 40, height: 1, background: "#7a6030", margin: "0 auto 32px", animation: "fadeIn 0.6s 2.5s both" }} />
+              <p style={{ fontSize: 15, lineHeight: 2.2, color: "#b0a898", maxWidth: 300, animation: "fadeIn 0.8s 3.2s both" }}>
+                {t.desc}
+              </p>
+              <button className="rb" onClick={restart}
+                style={{ marginTop: 48, background: "transparent", border: "1px solid #7a6030", color: "#7a7268", fontSize: 13, letterSpacing: "0.2em", padding: "12px 32px", borderRadius: 40, cursor: "pointer", transition: "all 0.2s", animation: "fadeIn 0.6s 5s both" }}>
+                ← もう一度選ぶ
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
+</body>
+</html>
